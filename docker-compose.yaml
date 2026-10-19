@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  couchdb0:
+    container_name: couchdb0.zut.forensics.zm
+    image: couchdb:3.3
+    environment:
+      - COUCHDB_USER=admin
+      - COUCHDB_PASSWORD=adminpw
+    ports:
+      - "5984:5984"
+    volumes:
+      - couchdb_data:/opt/couchdb/data
+    networks:
+      - forensic-fabric-net
+
+volumes:
+  couchdb_data:
+
+networks:
+  forensic-fabric-net:
+    name: zut_forensic_fabric_network

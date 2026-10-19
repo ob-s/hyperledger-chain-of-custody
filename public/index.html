@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ZUT Hyperledger Fabric — Digital Evidence Chain of Custody System</title>
+  <style>
+    :root {
+      --bg: #0b1120;
+      --panel: #111827;
+      --border: #1f2937;
+      --accent: #0284c7;
+      --accent-light: #38bdf8;
+      --success: #10b981;
+      --danger: #ef4444;
+      --text: #f3f4f6;
+      --muted: #9ca3af;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
+    body { background: var(--bg); color: var(--text); min-height: 100vh; }
+    .hidden { display: none !important; }
+
+    /* Login Screen */
+    .login-wrapper {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: radial-gradient(circle at top, #1e293b, #0b1120 70%);
+    }
+    .login-card {
+      background: var(--panel);
+      border: 1px solid #334155;
+      border-radius: 12px;
+      width: 100%;
+      max-width: 460px;
+      padding: 28px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    }
+    .login-card h1 { font-size: 1.25rem; color: var(--accent-light); margin-bottom: 6px; }
+    .login-card p { font-size: 0.84rem; color: var(--muted); margin-bottom: 20px; }
+    .quick-accounts {
+      margin-top: 18px;
+      border-top: 1px solid var(--border);
+      padding-top: 14px;
+    }
+    .quick-btn {
+      display: block;
+      width: 100%;
+      text-align: left;
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: var(--text);
+      padding: 8px 12px;
+      margin-bottom: 6px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+    .quick-btn:hover { border-color: var(--accent-light); }
+
+    /* Header & App Layout */
+    header {
+      background: #0f172a;
+      border-bottom: 1px solid var(--border);
+      padding: 14px 26px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 14px;
+    }
+    .user-pill {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: #1e293b;
+      padding: 8px 14px;
+      border-radius: 8px;
+      border: 1px solid #334155;
+      font-size: 0.83rem;
+    }
+    .container { max-width: 1320px; margin: 22px auto; padding: 0 20px 40px; }
+    .status-bar {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .stat-card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      padding: 14px 16px;
+      border-radius: 8px;
+    }
+    .stat-card span { font-size: 0.74rem; color: var(--muted); text-transform: uppercase; }
+    .stat-card strong { display: block; font-size: 1.05rem; margin-top: 4px; color: var(--accent-light); }
+
+    .tabs { display: flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap; }
+    .tab-btn {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 10px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.86rem;
+    }
+    .tab-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1.35fr; gap: 20px; }
+    @media (max-width: 920px) { .grid-2 { grid-template-columns: 1fr; } }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 18px;
+    }
+    .card h2 {
+      font-size: 1.02rem;
+      color: var(--accent-light);
+      margin-bottom: 14px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    .form-group { margin-bottom: 12px; }
+    .form-group label { display: block; font-size: 0.8rem; color: var(--muted); margin-bottom: 4px; }
+    input, select, textarea {
+      width: 100%;
+      background: #1e293b;
+      color: var(--text);
+      border: 1px solid #334155;
+      padding: 9px 12px;
+      border-radius: 6px;
+      font-size: 0.88rem;
+    }
+    button.primary {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
+    }
+    button.primary:hover { background: #0369a1; }
+    .hash-box {
+      font-family: 'Consolas', monospace;
+      font-size: 0.76rem;
+      background: #090d16;
+      padding: 8px 10px;
+      border-radius: 4px;
+      border: 1px solid #1e293b;
+      color: #34d399;
+      word-break: break-all;
+      margin-top: 6px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      background: #1e3a8a;
+      color: #93c5fd;
+    }
+    .timeline-item {
+      border-left: 2px solid var(--accent-light);
+      padding-left: 12px;
+      margin-bottom: 12px;
+    }
+    .alert { padding: 12px 16px; border-radius: 6px; margin-bottom: 16px; font-size: 0.88rem; display: none; }
+    .alert.success { background: rgba(16, 185, 129, 0.15); border: 1px solid var(--success); color: #6ee7b7; }
+    .alert.error { background: rgba(239, 68, 68, 0.15); border: 1px solid var(--danger); color: #fca5a5; }
+
+    /* Printable Court Certificate */
+    @media print {
+      body { background: #fff; color: #000; }
+      header, .tabs, .status-bar, .no-print { display: none !important; }
+      .card { border: 1px solid #000; background: #fff; color: #000; }
+      .hash-box { background: #f3f4f6; color: #000; border: 1px solid #ccc; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- 1. MSP AUTHENTICATION LOGIN SCREEN -->
+<div id="loginScreen" class="login-wrapper">
+  <div class="login-card">
+    <h1>🔗 Hyperledger Fabric CoC Portal</h1>
+    <p>Zambia University College of Technology — Digital Forensics & Judiciary MSP Authentication</p>
+    <div id="loginAlert" class="alert error"></div>
+    <form id="loginForm">
+      <div class="form-group">
+        <label>MSP Username</label>
+        <input type="text" id="loginUsername" value="chanda.zp" required />
+      </div>
+      <div class="form-group">
+        <label>MSP Password</label>
+        <input type="password" id="loginPassword" value="Zut@2026" required />
+      </div>
+      <button type="submit" class="primary">Authenticate with MSP Certificate</button>
+    </form>
+
+    <div class="quick-accounts">
+      <span style="font-size:0.76rem; color:var(--muted); display:block; margin-bottom:8px;">
+        Click a stakeholder account to auto-fill credentials (Password: <strong>Zut@2026</strong>):
+      </span>
+      <button class="quick-btn" onclick="fillLogin('chanda.zp')">
+        👮 <strong>chanda.zp</strong> — Insp. Chanda Mulenga (First Responder | ZambiaPoliceMSP)
+      </button>
+      <button class="quick-btn" onclick="fillLogin('mutale.lab')">
+        🔬 <strong>mutale.lab</strong> — Analyst Mutale Banda (Forensic Investigator | ForensicLabMSP)
+      </button>
+      <button class="quick-btn" onclick="fillLogin('daka.sup')">
+        🛡️ <strong>daka.sup</strong> — Supt. Daka Phiri (Supervisor | SupervisoryMSP)
+      </button>
+      <button class="quick-btn" onclick="fillLogin('mwamba.court')">
+        ⚖️ <strong>mwamba.court</strong> — Hon. Justice K. Mwamba (Judicial Officer | JudiciaryMSP)
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- 2. MAIN AUTHENTICATED APPLICATION -->
+<div id="appScreen" class="hidden">
+  <header>
+    <div>
+      <h1 style="font-size:1.15rem; color:var(--accent-light);">🔗 Hyperledger Fabric — Digital Evidence Chain of Custody System</h1>
+      <p style="font-size:0.78rem; color:var(--muted);" id="userDeptBanner"></p>
+    </div>
+    <div class="user-pill">
+      <div>
+        <strong id="userNameBanner" style="color:#fff;"></strong><br/>
+        <span id="userMspBanner" style="color:var(--accent-light); font-size:0.75rem;"></span>
+      </div>
+      <button onclick="logout()" style="background:#ef4444; color:#fff; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-weight:600;">
+        Sign Out
+      </button>
+    </div>
+  </header>
+
+  <div class="container">
+    <div id="alertBox" class="alert"></div>
+
+    <div class="status-bar">
+      <div class="stat-card">
+        <span>Fabric Channel</span>
+        <strong id="statChannel">zut-forensic-coc-channel</strong>
+      </div>
+      <div class="stat-card">
+        <span>World State DB (CouchDB)</span>
+        <strong id="statCouch">Embedded + CouchDB Ready</strong>
+      </div>
+      <div class="stat-card">
+        <span>Vaulted Evidence Items</span>
+        <strong id="statEvidence">0</strong>
+      </div>
+      <div class="stat-card">
+        <span>Validated Ledger Blocks</span>
+        <strong id="statBlocks">1</strong>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('tab-evidence', this)">1. Evidence Vault & Registration</button>
+      <button class="tab-btn" onclick="switchTab('tab-custody', this)">2. Custody Handover & Forensic Logs</button>
+      <button class="tab-btn" onclick="switchTab('tab-verify', this)">3. Judicial Verification & Court Report</button>
+      <button class="tab-btn" onclick="switchTab('tab-ledger', this)">4. Blockchain & MSP Registry</button>
+    </div>
+
+    <!-- TAB 1: REGISTER & VIEW EVIDENCE -->
+    <div id="tab-evidence" class="tab-pane">
+      <div class="grid-2">
+        <div class="card">
+          <h2>📥 Register & Vault New Digital Evidence</h2>
+          <form id="registerForm">
+            <div class="form-group">
+              <label>Evidence Unique ID *</label>
+              <input type="text" id="regId" value="EVD-ZUT-2026-001" required />
+            </div>
+            <div class="form-group">
+              <label>Official Case Reference Number *</label>
+              <input type="text" id="regCase" value="ZP/NDOLA/CYBER/2026/019" required />
+            </div>
+            <div class="form-group">
+              <label>Evidence Title *</label>
+              <input type="text" id="regTitle" placeholder="e.g., Mobile Money Fraud Transaction Dump" required />
+            </div>
+            <div class="form-group">
+              <label>Evidence Category *</label>
+              <select id="regCategory">
+                <option value="System & Server Logs">System & Server Logs</option>
+                <option value="Disk / Mobile Forensic Image">Disk / Mobile Forensic Image</option>
+                <option value="Multimedia (CCTV / Audio / Image)">Multimedia (CCTV / Audio / Image)</option>
+                <option value="Financial / Database Record">Financial / Database Record</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Seizure / Collection Location *</label>
+              <input type="text" id="regLocation" value="Ndola Central Business District" required />
+            </div>
+            <div class="form-group">
+              <label>Detailed Description *</label>
+              <textarea id="regDesc" rows="2" placeholder="Describe device/source and seizure circumstances..." required></textarea>
+            </div>
+            <div class="form-group">
+              <label>Attach Digital File (Stored in Vault & Hashed via SHA-256) *</label>
+              <input type="file" id="regFile" required />
+            </div>
+            <div class="form-group">
+              <label>Collection Remarks</label>
+              <input type="text" id="regNotes" value="Bit-stream copy verified and hashed at collection." />
+            </div>
+            <button type="submit" class="primary">Seal in Evidence Vault & Commit to Blockchain</button>
+          </form>
+        </div>
+
+        <div class="card">
+          <h2>📂 Active Digital Evidence Registry & Chronological Chain of Custody</h2>
+          <div id="evidenceContainer"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: CUSTODY HANDOVER & FORENSIC LOGGING -->
+    <div id="tab-custody" class="tab-pane hidden">
+      <div class="grid-2">
+        <div class="card">
+          <h2>🔄 Execute Chain of Custody Handover</h2>
+          <p style="font-size:0.8rem; color:var(--muted); margin-bottom:12px;">
+            Smart Contract Rule: Only the <strong>current custodian</strong> or an authorized <strong>Supervisor</strong> can transfer an item of evidence.
+          </p>
+          <form id="transferForm">
+            <div class="form-group">
+              <label>Select Evidence Item *</label>
+              <select id="transEvId" required></select>
+            </div>
+            <div class="form-group">
+              <label>Transfer Custody To (Enrolled MSP Officer) *</label>
+              <select id="transTargetUser" required></select>
+            </div>
+            <div class="form-group">
+              <label>Handover Purpose / Chain of Custody Remarks *</label>
+              <textarea id="transReason" rows="3" placeholder="e.g., Transferred to Digital Forensics Lab for hash verification and deep artifact extraction." required></textarea>
+            </div>
+            <button type="submit" class="primary">Sign & Commit Custody Transfer</button>
+          </form>
+        </div>
+
+        <div class="card">
+          <h2>🔬 Record Forensic Analysis / Supervisory Audit / Judicial Ruling</h2>
+          <form id="eventForm">
+            <div class="form-group">
+              <label>Select Evidence Item *</label>
+              <select id="evtEvId" required></select>
+            </div>
+            <div class="form-group">
+              <label>Official Action Status *</label>
+              <select id="evtType">
+                <option value="FORENSIC_EXAMINATION_COMPLETED">FORENSIC_EXAMINATION_COMPLETED</option>
+                <option value="SUPERVISORY_CHAIN_AUDIT_PASSED">SUPERVISORY_CHAIN_AUDIT_PASSED</option>
+                <option value="ADMITTED_AS_COURT_EVIDENCE">ADMITTED_AS_COURT_EVIDENCE</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Official Findings / Report Summary *</label>
+              <textarea id="evtNotes" rows="3" placeholder="Enter forensic examination results or judicial admissibility ruling..." required></textarea>
+            </div>
+            <button type="submit" class="primary">Commit Forensic Event to Blockchain</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: JUDICIAL VERIFICATION & PRINTABLE CERTIFICATE -->
+    <div id="tab-verify" class="tab-pane hidden">
+      <div class="grid-2">
+        <div class="card no-print">
+          <h2>⚖️ Live Cryptographic Tamper Detection</h2>
+          <p style="font-size:0.82rem; color:var(--muted); margin-bottom:14px;">
+            Upload an evidence file to recompute its SHA-256 digest and verify it against the immutable Hyperledger Fabric record.
+          </p>
+          <form id="verifyForm">
+            <div class="form-group">
+              <label>Select Evidence Record *</label>
+              <select id="verEvId" required></select>
+            </div>
+            <div class="form-group">
+              <label>Select Digital File to Verify *</label>
+              <input type="file" id="verFile" required />
+            </div>
+            <button type="submit" class="primary">Run SHA-256 Integrity Verification</button>
+          </form>
+        </div>
+
+        <div class="card" id="certificateCard">
+          <h2>📜 Official Chain of Custody & Admissibility Certificate</h2>
+          <div id="verifyResultContainer" style="color:var(--muted); font-size:0.86rem;">
+            Run a verification check on the left to generate a printable Court Admissibility Certificate.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: BLOCKCHAIN AUDIT & MSP USER MANAGEMENT -->
+    <div id="tab-ledger" class="tab-pane hidden">
+      <div class="grid-2">
+        <div class="card">
+          <h2>🛡️ Cryptographic Blockchain Auditor & MSP Enrollment</h2>
+          <button onclick="runFullLedgerAudit()" class="primary" style="margin-bottom:14px;">
+            Verify Entire Blockchain Hash Chain (Genesis to Latest Block)
+          </button>
+          <div id="auditResultBox" style="margin-bottom:20px;"></div>
+
+          <div id="supervisorEnrollPanel" class="hidden" style="border-top:1px solid var(--border); padding-top:16px;">
+            <h2 style="font-size:0.95rem;">➕ Enroll New MSP Officer (Supervisor Only)</h2>
+            <form id="enrollUserForm">
+              <div class="form-group">
+                <label>Username *</label>
+                <input type="text" id="newUsername" placeholder="e.g., banda.zp" required />
+              </div>
+              <div class="form-group">
+                <label>Temporary Password *</label>
+                <input type="password" id="newPassword" value="Zut@2026" required />
+              </div>
+              <div class="form-group">
+                <label>Full Name & Rank *</label>
+                <input type="text" id="newFullName" placeholder="e.g., Sgt. Kelvin Zulu" required />
+              </div>
+              <div class="form-group">
+                <label>Badge / Service Number *</label>
+                <input type="text" id="newBadge" placeholder="e.g., ZP-FR-7721" required />
+              </div>
+              <div class="form-group">
+                <label>MSP Role *</label>
+                <select id="newRole">
+                  <option value="First Responder">First Responder (ZambiaPoliceMSP)</option>
+                  <option value="Forensic Investigator">Forensic Investigator (ForensicLabMSP)</option>
+                  <option value="Supervisor">Supervisor (SupervisoryMSP)</option>
+                  <option value="Judicial Officer">Judicial Officer (JudiciaryMSP)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Department *</label>
+                <input type="text" id="newDept" value="Zambia Police Cybercrime Unit" required />
+              </div>
+              <button type="submit" class="primary">Enroll Officer in MSP</button>
+            </form>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>⛓️ Immutable Hyperledger Fabric Block Explorer</h2>
+          <div id="blocksContainer"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  let authToken = localStorage.getItem('zut_msp_token') || null;
+  let currentUser = JSON.parse(localStorage.getItem('zut_msp_user') || 'null');
+  let systemState = { evidenceList: [], blocks: [], users: [] };
+
+  function fillLogin(username) {
+    document.getElementById('loginUsername').value = username;
+    document.getElementById('loginPassword').value = 'Zut@2026';
+  }
+
+  function showAlert(msg, type = 'success') {
+    const box = document.getElementById('alertBox');
+    box.textContent = msg;
+    box.className = `alert ${type}`;
+    box.style.display = 'block';
+    setTimeout(() => { box.style.display = 'none'; }, 6000);
+  }
+
+  function switchTab(tabId, btn) {
+    document.querySelectorAll('.tab-pane').forEach(el => el.classList.add('hidden'));
+    document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+    document.getElementById(tabId).classList.remove('hidden');
+    btn.classList.add('active');
+  }
+
+  document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        username: document.getElementById('loginUsername').value.trim(),
+        password: document.getElementById('loginPassword').value
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      const errBox = document.getElementById('loginAlert');
+      errBox.textContent = data.error;
+      errBox.style.display = 'block';
+      return;
+    }
+    authToken = data.token;
+    currentUser = data.user;
+    localStorage.setItem('zut_msp_token', authToken);
+    localStorage.setItem('zut_msp_user', JSON.stringify(currentUser));
+    initApp();
+  });
+
+  function logout() {
+    localStorage.removeItem('zut_msp_token');
+    localStorage.removeItem('zut_msp_user');
+    authToken = null;
+    currentUser = null;
+    document.getElementById('appScreen').classList.add('hidden');
+    document.getElementById('loginScreen').classList.remove('hidden');
+  }
+
+  async function initApp() {
+    if (!authToken || !currentUser) return;
+    document.getElementById('loginScreen').classList.add('hidden');
+    document.getElementById('appScreen').classList.remove('hidden');
+
+    document.getElementById('userNameBanner').textContent = `${currentUser.fullName} (${currentUser.badgeNumber})`;
+    document.getElementById('userMspBanner').textContent = `${currentUser.role} | ${currentUser.mspId} | X.509: ${currentUser.x509Serial}`;
+    document.getElementById('userDeptBanner').textContent = currentUser.department;
+
+    if (currentUser.role === 'Supervisor') {
+      document.getElementById('supervisorEnrollPanel').classList.remove('hidden');
+    } else {
+      document.getElementById('supervisorEnrollPanel').classList.add('hidden');
+    }
+
+    await refreshState();
+  }
+
+  async function refreshState() {
+    const res = await fetch('/api/state', {
+      headers: { 'Authorization': `Bearer ${authToken}` }
+    });
+    if (res.status === 401) return logout();
+    systemState = await res.json();
+
+    document.getElementById('statCouch').textContent = systemState.couchDbOnline
+      ? 'CouchDB Docker Connected (Port 5984)'
+      : 'Local WorldState Active';
+    document.getElementById('statEvidence').textContent = systemState.evidenceList.length;
+    document.getElementById('statBlocks').textContent = systemState.blocks.length;
+
+    const evOptions = systemState.evidenceList.length
+      ? systemState.evidenceList.map(e => `<option value="${e.evidenceId}">${e.evidenceId} — ${e.title} [Custodian: ${e.currentCustodianName}]</option>`).join('')
+      : `<option value="">-- No Evidence Registered --</option>`;
+
+    ['transEvId', 'evtEvId', 'verEvId'].forEach(id => {
+      document.getElementById(id).innerHTML = evOptions;
+    });
+
+    document.getElementById('transTargetUser').innerHTML = systemState.users
+      .map(u => `<option value="${u.username}">${u.fullName} — ${u.role} (${u.mspId})</option>`)
+      .join('');
+
+    renderEvidenceList();
+    renderBlocks();
+  }
+
+  function renderEvidenceList() {
+    const container = document.getElementById('evidenceContainer');
+    if (systemState.evidenceList.length === 0) {
+      container.innerHTML = `<p style="color:var(--muted);">No digital evidence registered yet.</p>`;
+      return;
+    }
+    container.innerHTML = systemState.evidenceList.map(ev => `
+      <div style="border:1px solid #334155; border-radius:8px; padding:14px; margin-bottom:14px; background:#0f172a;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+          <strong style="color:var(--accent-light);">${ev.evidenceId}: ${ev.title}</strong>
+          <span class="badge">${ev.status}</span>
+        </div>
+        <p style="font-size:0.81rem; color:var(--muted); margin-top:6px;">
+          <strong>Case:</strong> ${ev.caseNumber} | <strong>Category:</strong> ${ev.category}<br/>
+          <strong>Location:</strong> ${ev.collectionLocation}<br/>
+          <strong>Current Custodian:</strong> <span style="color:#fff;">${ev.currentCustodianName} (${ev.currentCustodianRole} - ${ev.currentCustodianMsp})</span><br/>
+          <strong>Vaulted File:</strong> <a href="/vault/${ev.storedFileName}" download="${ev.fileName}" style="color:var(--accent-light);">${ev.fileName} (${ev.fileSize}) — Download Copy</a>
+        </p>
+        <div class="hash-box"><strong>Immutable SHA-256:</strong> ${ev.sha256Hash}</div>
+        <details style="margin-top:10px; font-size:0.82rem;">
+          <summary style="cursor:pointer; color:var(--accent-light); font-weight:600;">
+            Inspect Chain of Custody Log (${ev.custodyHistory.length} Immutable Transactions)
+          </summary>
+          <div style="margin-top:10px;">
+            ${ev.custodyHistory.map(h => `
+              <div class="timeline-item">
+                <strong>Step #${h.step}: ${h.action}</strong> — <small style="color:var(--muted);">${new Date(h.timestamp).toLocaleString()}</small><br/>
+                <span><strong>From:</strong> ${h.fromCustodian} &rarr; <strong>To:</strong> ${h.toCustodian}</span><br/>
+                <span style="color:var(--muted);">Remarks: ${h.notes}</span><br/>
+                <small style="color:var(--muted);">Signed By: ${h.actorName} (${h.mspId}) | TxID: ${h.txId.substring(0, 20)}...</small>
+              </div>
+            `).join('')}
+          </div>
+        </details>
+      </div>
+    `).join('');
+  }
+
+  function renderBlocks() {
+    const container = document.getElementById('blocksContainer');
+    container.innerHTML = systemState.blocks.map(b => `
+      <div style="border:1px solid #334155; border-radius:8px; padding:12px; margin-bottom:10px; background:#0f172a;">
+        <div style="display:flex; justify-content:space-between;">
+          <strong style="color:var(--accent-light);">Block #${b.blockNumber} — ${b.action}</strong>
+          <small style="color:var(--muted);">${new Date(b.timestamp).toLocaleString()}</small>
+        </div>
+        <p style="font-size:0.8rem; margin-top:4px; color:var(--muted);">
+          <strong>Target:</strong> ${b.evidenceId} | <strong>Signer:</strong> ${b.actor} (${b.mspId})
+        </p>
+        <div class="hash-box">
+          <strong>TxID:</strong> ${b.txId}<br/>
+          <strong>Prev Hash:</strong> ${b.previousBlockHash}<br/>
+          <strong>Block Hash:</strong> ${b.blockHash}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // Register Evidence Submit
+  document.getElementById('registerForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const fd = new FormData();
+    fd.append('evidenceId', document.getElementById('regId').value);
+    fd.append('caseNumber', document.getElementById('regCase').value);
+    fd.append('title', document.getElementById('regTitle').value);
+    fd.append('category', document.getElementById('regCategory').value);
+    fd.append('collectionLocation', document.getElementById('regLocation').value);
+    fd.append('description', document.getElementById('regDesc').value);
+    fd.append('notes', document.getElementById('regNotes').value);
+    fd.append('evidenceFile', document.getElementById('regFile').files[0]);
+
+    const res = await fetch('/api/evidence/register', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${authToken}` },
+      body: fd
+    });
+    const data = await res.json();
+    if (!res.ok) return showAlert(data.error, 'error');
+    showAlert(data.message, 'success');
+    const nextNum = systemState.evidenceList.length + 2;
+    document.getElementById('regId').value = `EVD-ZUT-2026-00${nextNum}`;
+    refreshState();
+  });
+
+  // Transfer Custody Submit
+  document.getElementById('transferForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const res = await fetch('/api/evidence/transfer', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authToken}`
+      },
+      body: JSON.stringify({
+        evidenceId: document.getElementById('transEvId').value,
+        targetUsername: document.getElementById('transTargetUser').value,
+        transferReason: document.getElementById('transReason').value
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) return showAlert(data.error, 'error');
+    showAlert(data.message, 'success');
+    refreshState();
+  });
+
+  // Forensic Event Submit
+  document.getElementById('eventForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const res = await fetch('/api/evidence/event', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authToken}`
+      },
+      body: JSON.stringify({
+        evidenceId: document.getElementById('evtEvId').value,
+        eventType: document.getElementById('evtType').value,
+        findingsReport: document.getElementById('evtNotes').value
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) return showAlert(data.error, 'error');
+    showAlert(data.message, 'success');
+    refreshState();
+  });
+
+  // Verify File & Generate Printable Certificate
+  document.getElementById('verifyForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const fd = new FormData();
+    fd.append('evidenceId', document.getElementById('verEvId').value);
+    fd.append('verifyFile', document.getElementById('verFile').files[0]);
+
+    const res = await fetch('/api/evidence/verify-file', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${authToken}` },
+      body: fd
+    });
+    const data = await res.json();
+    if (!res.ok) return showAlert(data.error, 'error');
+
+    const ev = data.evidence;
+    const color = data.isAuthentic ? '#10b981' : '#ef4444';
+    const statusText = data.isAuthentic
+      ? 'AUTHENTIC & ADMISSIBLE — CRYPTOGRAPHIC SHA-256 MATCH CONFIRMED'
+      : 'TAMPERING DETECTED — CRYPTOGRAPHIC HASH MISMATCH (INADMISSIBLE)';
+
+    document.getElementById('verifyResultContainer').innerHTML = `
+      <div style="border:2px solid ${color}; padding:18px; border-radius:8px;">
+        <h3 style="color:${color}; margin-bottom:10px;">${statusText}</h3>
+        <p style="font-size:0.84rem; line-height:1.6;">
+          <strong>Case Reference:</strong> ${ev.caseNumber}<br/>
+          <strong>Evidence ID & Title:</strong> ${ev.evidenceId} — ${ev.title}<br/>
+          <strong>File Examined:</strong> ${data.testedFileName} (${data.testedFileSize})<br/>
+          <strong>Current Custodian:</strong> ${ev.currentCustodianName} (${ev.currentCustodianRole})<br/>
+          <strong>Verified By Officer:</strong> ${data.verifiedBy} [Badge: ${data.badgeNumber}]<br/>
+          <strong>Verification Timestamp:</strong> ${new Date(data.verifiedAt).toLocaleString()}
+        </p>
+        <div class="hash-box" style="margin-top:12px;">
+          <strong>On-Chain Hyperledger Fabric SHA-256 Digest:</strong><br/>${data.onChainHash}<br/><br/>
+          <strong>Computed File SHA-256 Digest:</strong><br/>${data.computedHash}
+        </div>
+        <h4 style="margin-top:14px; margin-bottom:8px; color:var(--accent-light);">Complete On-Chain Custody History (${ev.custodyHistory.length} Events)</h4>
+        ${ev.custodyHistory.map(h => `
+          <div style="font-size:0.78rem; border-bottom:1px solid #334155; padding:6px 0;">
+            <strong>#${h.step} ${h.action}</strong> (${new Date(h.timestamp).toLocaleString()})<br/>
+            ${h.fromCustodian} &rarr; ${h.toCustodian} | <em>${h.notes}</em>
+          </div>
+        `).join('')}
+        <button onclick="window.print()" class="primary no-print" style="margin-top:14px;">
+          🖨️ Print / Save Official Judicial Admissibility Certificate (PDF)
+        </button>
+      </div>
+    `;
+  });
+
+  // Full Blockchain Integrity Audit
+  async function runFullLedgerAudit() {
+    const res = await fetch('/api/ledger/audit', {
+      headers: { 'Authorization': `Bearer ${authToken}` }
+    });
+    const data = await res.json();
+    const box = document.getElementById('auditResultBox');
+    if (data.valid) {
+      box.innerHTML = `
+        <div style="border:1px solid #10b981; background:rgba(16,185,129,0.1); padding:12px; border-radius:6px; color:#6ee7b7; font-size:0.84rem;">
+          ✅ <strong>LEDGER INTEGRITY VERIFIED:</strong> All ${data.totalBlocksVerified} blocks cryptographically linked and untampered.<br/>
+          <small>Audited by ${data.auditedBy} at ${new Date(data.auditedAt).toLocaleString()}</small>
+        </div>
+      `;
+    } else {
+      box.innerHTML = `<div style="color:#ef4444;">❌ Ledger Discrepancies Found: ${data.discrepancies.join(', ')}</div>`;
+    }
+  }
+
+  // Supervisor Enroll Officer
+  document.getElementById('enrollUserForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const res = await fetch('/api/auth/register-user', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authToken}`
+      },
+      body: JSON.stringify({
+        username: document.getElementById('newUsername').value.trim(),
+        password: document.getElementById('newPassword').value,
+        fullName: document.getElementById('newFullName').value.trim(),
+        badgeNumber: document.getElementById('newBadge').value.trim(),
+        role: document.getElementById('newRole').value,
+        department: document.getElementById('newDept').value.trim()
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) return showAlert(data.error, 'error');
+    showAlert(data.message, 'success');
+    refreshState();
+  });
+
+  if (authToken && currentUser) {
+    initApp();
+  }
+</script>
+</body>
+</html>

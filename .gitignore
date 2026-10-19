@@ -100,6 +100,11 @@ dist
 # vuepress build output
 .vuepress/dist
 
+node_modules/
+evidence_vault/
+fabric-ledger-store.json
+.env
+
 # vuepress v2.x temp and cache directory
 .temp
 .cache
